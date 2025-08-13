@@ -13,20 +13,25 @@
     
     <!-- Firebase SDK -->
     <script type="module">
+        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Variabel global untuk akses di script.js
-        // Menggunakan nama variabel lingkungan yang telah diperbaiki tanpa underscore ganda
-        window.firebaseConfig = JSON.parse(typeof FIREBASE_CONFIG !== 'undefined' ? FIREBASE_CONFIG : '{}');
-        window.initialAuthToken = typeof INITIAL_AUTH_TOKEN !== 'undefined' ? INITIAL_AUTH_TOKEN : null;
-        window.appId = typeof APP_ID !== 'undefined' ? APP_ID : 'default-app-id';
+        // Access environment variables (corrected names)
+        // These variables will be provided by your hosting platform (Netlify/Render)
+        // If running locally without env vars, they will default to empty/null/default-app-id
+        const firebaseConfig = JSON.parse(typeof FIREBASE_CONFIG !== 'undefined' ? FIREBASE_CONFIG : '{}');
+        const initialAuthToken = typeof INITIAL_AUTH_TOKEN !== 'undefined' ? INITIAL_AUTH_TOKEN : null;
+        const appId = typeof APP_ID !== 'undefined' ? APP_ID : 'default-app-id';
 
-        // Inisialisasi Firebase dan ekspor untuk digunakan di script.js
-        window.firebaseApp = initializeApp(window.firebaseConfig);
+        // Initialize Firebase and expose instances/functions to the global window object
+        // This makes them accessible from script.js (which is a regular script, not a module)
+        window.firebaseApp = initializeApp(firebaseConfig);
         window.db = getFirestore(window.firebaseApp);
         window.auth = getAuth(window.firebaseApp);
+
+        // Expose Firebase functions to window for script.js to use
         window.onAuthStateChanged = onAuthStateChanged;
         window.signInAnonymously = signInAnonymously;
         window.signInWithCustomToken = signInWithCustomToken;
@@ -47,6 +52,10 @@
         window.getDocs = getDocs;
         window.arrayUnion = arrayUnion;
         window.arrayRemove = arrayRemove;
+        
+        // Expose the environment variables directly
+        window.initialAuthToken = initialAuthToken;
+        window.appId = appId;
     </script>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -383,59 +392,6 @@
         </div>
     </div>
 
-    
-<!-- Firebase SDK v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-<script>
-  // Ganti dengan konfigurasi dari Firebase Console -> Project Settings -> SDK setup & config
-  const firebaseConfig = {
-  apiKey: "AIzaSyAfNPCkWJVKzQOoFWOLfUf8-XNohLOC-WI",
-  authDomain: "izinkumas.firebaseapp.com",
-  projectId: "izinkumas",
-  storageBucket: "izinkumas.firebasestorage.app",
-  messagingSenderId: "88478446339",
-  appId: "1:88478446339:web:d36670a62b855fa15aef36"
-};
-
-  // Inisialisasi Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // Firestore & Auth instances
-  window.db = firebase.firestore();
-  window.auth = firebase.auth();
-
-  // Auth methods
-  window.signInWithEmailAndPassword = (...args) =>
-    firebase.auth().signInWithEmailAndPassword(...args);
-  window.onAuthStateChanged = (...args) =>
-    firebase.auth().onAuthStateChanged(...args);
-  window.signInAnonymously = (...args) =>
-    firebase.auth().signInAnonymously(...args);
-  window.signOut = (...args) =>
-    firebase.auth().signOut(...args);
-
-  // Firestore methods (1:1 bindings)
-  window.collection = (...args) => firebase.firestore().collection(...args);
-  window.doc = (...args) => firebase.firestore().doc(...args);
-  window.addDoc = (...args) => args[0].add(...args.slice(1));
-  window.getDoc = (...args) => args[0].get(...args.slice(1));
-  window.setDoc = (...args) => args[0].set(...args.slice(1));
-  window.deleteDoc = (...args) => args[0].delete(...args.slice(1));
-  window.onSnapshot = (...args) => args[0].onSnapshot(...args.slice(1));
-  window.getDocs = (...args) => args[0].get(...args.slice(1));
-  window.query = (...args) => {
-    // If first arg is already a Query/CollectionRef, just return it
-    if (args[0] && typeof args[0] === 'object') {
-      return args[0].where(...args.slice(1));
-    }
-    return firebase.firestore().collection(args[0]).where(...args.slice(1));
-  };
-  window.where = (...args) => firebase.firestore().where(...args);
-</script>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
