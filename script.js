@@ -5,10 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = window.auth; // Auth instance
     const appId = window.appId; // App ID from environment
 
-    // TIDAK LAGI MENGGUNAKAN DESTRUCTURING DI SINI.
-    // Fungsi-fungsi Firebase akan diakses langsung melalui objek 'window'.
-    // Contoh: window.signInWithEmailAndPassword, window.doc, dll.
-
     // Firestore Collection References (dynamic based on appId and userId)
     const getStudentsColRef = (uid) => window.collection(db, `artifacts/${appId}/users/${uid}/students`);
     const getDailyQueueColRef = (uid) => window.collection(db, `artifacts/${appId}/users/${uid}/daily_queue`);
