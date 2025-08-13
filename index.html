@@ -403,41 +403,37 @@
   // Inisialisasi Firebase
   firebase.initializeApp(firebaseConfig);
 
-  // Firestore & Auth
+  // Firestore & Auth instances
   window.db = firebase.firestore();
   window.auth = firebase.auth();
 
   // Auth methods
-  window.signInWithEmailAndPassword = (auth, email, pass) =>
-    firebase.auth().signInWithEmailAndPassword(email, pass);
-  window.onAuthStateChanged = (auth, cb) =>
-    firebase.auth().onAuthStateChanged(cb);
-  window.signInAnonymously = (auth) =>
-    firebase.auth().signInAnonymously();
-  window.signOut = () =>
-    firebase.auth().signOut();
+  window.signInWithEmailAndPassword = (...args) =>
+    firebase.auth().signInWithEmailAndPassword(...args);
+  window.onAuthStateChanged = (...args) =>
+    firebase.auth().onAuthStateChanged(...args);
+  window.signInAnonymously = (...args) =>
+    firebase.auth().signInAnonymously(...args);
+  window.signOut = (...args) =>
+    firebase.auth().signOut(...args);
 
-  // Firestore methods
-  window.collection = (...args) =>
-    firebase.firestore().collection(...args);
-  window.doc = (...args) =>
-    firebase.firestore().doc(...args);
-  window.addDoc = (ref, data) =>
-    ref.add(data);
-  window.getDoc = (ref) =>
-    ref.get();
-  window.setDoc = (ref, data) =>
-    ref.set(data);
-  window.deleteDoc = (ref) =>
-    ref.delete();
-  window.onSnapshot = (ref, cb) =>
-    ref.onSnapshot(cb);
-  window.getDocs = (ref) =>
-    ref.get();
-  window.query = (...args) =>
-    firebase.firestore().collection(...args[0]).where(...args.slice(1));
-  window.where = (...args) =>
-    firebase.firestore().where(...args);
+  // Firestore methods (1:1 bindings)
+  window.collection = (...args) => firebase.firestore().collection(...args);
+  window.doc = (...args) => firebase.firestore().doc(...args);
+  window.addDoc = (...args) => args[0].add(...args.slice(1));
+  window.getDoc = (...args) => args[0].get(...args.slice(1));
+  window.setDoc = (...args) => args[0].set(...args.slice(1));
+  window.deleteDoc = (...args) => args[0].delete(...args.slice(1));
+  window.onSnapshot = (...args) => args[0].onSnapshot(...args.slice(1));
+  window.getDocs = (...args) => args[0].get(...args.slice(1));
+  window.query = (...args) => {
+    // If first arg is already a Query/CollectionRef, just return it
+    if (args[0] && typeof args[0] === 'object') {
+      return args[0].where(...args.slice(1));
+    }
+    return firebase.firestore().collection(args[0]).where(...args.slice(1));
+  };
+  window.where = (...args) => firebase.firestore().where(...args);
 </script>
 
 <script src="script.js"></script>
