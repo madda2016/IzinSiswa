@@ -18,9 +18,10 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Variabel global untuk akses di script.js
-        window.firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Menggunakan nama variabel lingkungan yang telah diperbaiki tanpa underscore ganda
+        window.firebaseConfig = JSON.parse(typeof FIREBASE_CONFIG !== 'undefined' ? FIREBASE_CONFIG : '{}');
+        window.initialAuthToken = typeof INITIAL_AUTH_TOKEN !== 'undefined' ? INITIAL_AUTH_TOKEN : null;
+        window.appId = typeof APP_ID !== 'undefined' ? APP_ID : 'default-app-id';
 
         // Inisialisasi Firebase dan ekspor untuk digunakan di script.js
         window.firebaseApp = initializeApp(window.firebaseConfig);
