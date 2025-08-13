@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Antrian Surat Izin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Variabel global untuk akses di script.js
+        window.firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Inisialisasi Firebase dan ekspor untuk digunakan di script.js
+        window.firebaseApp = initializeApp(window.firebaseConfig);
+        window.db = getFirestore(window.firebaseApp);
+        window.auth = getAuth(window.firebaseApp);
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.signOut = signOut;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.updatePassword = updatePassword;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.arrayUnion = arrayUnion;
+        window.arrayRemove = arrayRemove;
+    </script>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div id="public-view" class="fixed inset-0 flex items-center justify-content-center flex-col p-4 z-50">
+        <header class="absolute top-4 right-4 flex items-center space-x-2">
+            <button id="public-refresh-button" class="p-2 rounded-full text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15"></path></svg>
+            </button>
+            <button id="public-login-icon" class="p-2 rounded-full text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-md">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+            </button>
+        </header>
+        <div class="public-content">
+            <h3 class="public-main-title">SISWA IZIN HARI INI: <span id="public-queue-count">0</span> SISWA</h3>
+            
+            <div id="public-queue-table-container" class="public-queue-table-container">
+                <div id="public-queue-table-body-wrapper" class="public-queue-table-body-wrapper">
+                    <p class="text-base text-slate-400 mt-4">Belum ada siswa dalam antrian izin hari ini.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-dashboard" class="flex min-h-screen hidden">
+        <aside class="w-96 p-6 flex flex-col flex-shrink-0 h-screen">
+            <p class="text-xs font-extrabold tracking-widest animated-brand mb-4">Madda Soft Production</p>
+            <h1 class="text-2xl font-bold mb-1">Aplikasi Izin Siswa</h1>
+            <p id="active-date-display" class="text-sm text-slate-500 mb-6"></p>
+            
+            <nav class="space-y-2">
+                <!-- Urutan Baru: Daftar Antrian dan Form Pencarian -->
+                <button id="menu-today-queue" class="menu-item w-full text-left p-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                    <h2 class="font-semibold">Daftar Antrian</h2>
+                </button>
+                <div id="search-form-container" class="pt-4">
+                    <form id="search-form" class="space-y-3 relative p-3 bg-white rounded-lg shadow-sm">
+                        <div>
+                            <label for="search-nama" class="block text-xs font-medium text-slate-600">Nama Siswa</label>
+                            <input type="text" id="search-nama" name="nama" autocomplete="off" placeholder="Ketik nama..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                            <div id="autocomplete-results" class="absolute z-10 w-full bg-white border border-slate-200 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg hidden"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="kelas" class="block text-xs font-medium text-slate-600">Kelas</label>
+                                <input type="text" id="kelas" name="kelas" readonly class="mt-1 block w-full px-3 py-2 bg-slate-100 border-slate-300 rounded-md text-sm">
+                            </div>
+                            <div>
+                                <label for="wali" class="block text-xs font-medium text-slate-600">Nama Orang Tua / Wali</label>
+                                <input type="text" id="wali" name="wali" required placeholder="Nama Wali" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="keterangan" class="block text-xs font-medium text-slate-600">Keterangan</label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <select id="keterangan" name="keterangan" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                                    <option>Sakit</option>
+                                    <option>Izin</option>
+                                </select>
+                                <button type="submit" id="add-button" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 whitespace-nowrap">
+                                    + Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Urutan Baru: Riwayat -->
+                <button id="menu-archive" class="menu-item w-full flex items-center justify-between p-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors hidden" data-role="admin">
+                    <span class="font-semibold">Riwayat</span>
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v14h10V5H7zm3 4h4v2h-4V9zm0 4h4v2h-4v-2z"></path></svg>
+                </button>
+                
+                <!-- Urutan Baru: Database Siswa -->
+                <button id="menu-database" class="menu-item w-full flex items-center justify-between p-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors hidden" data-role="admin">
+                    <span class="font-semibold">Database Siswa</span>
+                    <svg class="arrow w-4 h-4 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <ul id="submenu-database" class="submenu space-y-1 mt-1 pl-4">
+                    <li><button id="open-manual-add-modal" class="w-full text-left p-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Tambah Siswa Baru</span></button></li>
+                    <li>
+                        <label for="csv-file-input" class="w-full text-left p-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm block cursor-pointer flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg><span>Impor dari .XLSX</span></label>
+                        <input type="file" id="csv-file-input" accept=".xlsx">
+                    </li>
+                    <li><button id="download-template-button" class="w-full text-left p-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg><span>Unduh Template XLSX</span></button></li>
+                    <li>
+                        <label for="import-data-file" class="w-full text-left p-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm block cursor-pointer flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v4m0 0v4m0-4h4m-4 0H4m11 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h5.586a1 1 0 01.707.293L15 6.414A1 1 0 0115.586 7H19a3 3 0 013 3v4"></path></svg><span>Impor Data dari File</span></label>
+                        <input type="file" id="import-data-file" accept=".json">
+                    </li>
+                    <li><button id="export-data-button" class="w-full text-left p-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v4m0 0v4m0-4h4m-4 0H4m11 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h5.586a1 1 0 01.707.293L15 6.414A1 1 0 0115.586 7H19a3 3 0 013 3v4"></path></svg><span>Ekspor Data ke File</span></button></li>
+                    <li><button id="delete-database-button" class="w-full text-left p-2 rounded-md text-red-600 hover:bg-red-50 text-sm flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg><span>Hapus Database</span></button></li>
+                </ul>
+
+                <!-- Urutan Baru: Manajemen Pegawai -->
+                <button id="menu-employee-management" class="menu-item w-full flex items-center justify-between p-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors hidden" data-role="admin">
+                    <span class="font-semibold">Manajemen Pegawai</span>
+                    <svg class="arrow w-4 h-4 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <ul id="submenu-employee-management" class="submenu space-y-1 mt-1 pl-4">
+                    <li><button id="open-employee-management-modal" class="w-full text-left p-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm flex items-center space-x-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><span>Kelola Pegawai</span></button></li>
+                </ul>
+
+                <!-- Urutan Baru: Ganti Password -->
+                <button id="open-change-password-modal-btn" class="menu-item w-full flex items-center justify-between p-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors hidden">
+                    <span class="font-semibold">Ganti Password</span>
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2v5a2 2 0 01-2 2h-5a2 2 0 01-2-2V9a2 2 0 012-2h5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9v-2a2 2 0 00-2-2H9a2 2 0 00-2 2v2"></path></svg>
+                </button>
+
+            </nav>
+            
+            <div class="mt-auto flex justify-between items-center text-xs text-slate-400 pt-4 border-t border-slate-200">
+                <span id="database-info">Database kosong.</span>
+                <span id="user-id-display" class="text-xs text-slate-400"></span>
+                <button id="open-settings-modal" class="p-2 rounded-full hover:bg-slate-100">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+                <button id="logout-button" class="px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors ml-2">Keluar</button>
+            </div>
+        </aside>
+
+        <main class="flex-grow bg-slate-50 p-8 flex flex-col h-screen">
+            <div id="queue-view" class="flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="queue-title" class="text-xl font-semibold text-slate-800">Daftar Antrian</h2>
+                    <div class="flex items-center space-x-4">
+                        <button id="reset-queue-button" class="text-sm text-orange-600 hover:text-orange-800 font-semibold hidden">Hapus Data Hari Ini</button>
+                        <button id="print-pdf-button" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-md hover:bg-blue-700 text-sm hidden">Cetak Laporan</button>
+                        <button id="print-slips-button" class="bg-emerald-600 text-white font-bold py-2 px-5 rounded-md hover:bg-emerald-700 text-sm">Cetak Izin Siswa</button>
+                    </div>
+                </div>
+                <div id="queue-container" class="flex-grow overflow-y-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+                    </div>
+            </div>
+
+            <div id="archive-view" class="flex-grow flex flex-col hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="archive-title" class="text-xl font-semibold text-slate-800">Riwayat Antrian</h2>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <label for="archive-start-date" class="block text-sm font-medium text-slate-700">Dari:</label>
+                            <input type="date" id="archive-start-date" class="mt-1 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm w-36">
+                            <label for="archive-end-date" class="block text-sm font-medium text-slate-700">Sampai:</label>
+                            <input type="date" id="archive-end-date" class="mt-1 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm w-36">
+                            <button id="archive-filter-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 text-sm">Tampilkan</button>
+                        </div>
+                        <button id="print-archive-report-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-md hover:bg-blue-700 text-sm">Cetak Laporan</button>
+                    </div>
+                </div>
+                <div id="archive-container" class="flex-grow overflow-y-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+                    <table class="w-full text-sm text-left text-slate-500">
+                        <thead class="text-xs uppercase bg-slate-100 text-slate-700 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Tanggal</th>
+                                <th scope="col" class="px-6 py-3">Nama Siswa</th>
+                                <th scope="col" class="px-6 py-3">Kelas</th>
+                                <th scope="col" class="px-6 py-3">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="archive-table-body">
+                            </tbody>
+                    </table>
+                    <div id="no-archive-data-message" class="p-4 text-center text-slate-400 hidden">Tidak ada riwayat antrian.</div>
+                </div>
+            </div>
+
+            <footer class="text-center text-xs text-slate-400 pt-4">
+                Design & Creative 2025 By : Madda soft Feat Gemini
+            </footer>
+        </main>
+    </div>
+
+    <div id="manual-add-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Tambah Siswa Baru ke Database</h2>
+                <button id="close-manual-add-modal-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <form id="manual-add-form" class="space-y-4">
+                    <p class="text-sm text-slate-600">Siswa yang ditambahkan di sini akan langsung bisa dicari.</p>
+                    <div>
+                        <label for="manual-nama" class="block text-sm font-medium text-slate-700">Nama Siswa Baru</label>
+                        <input type="text" id="manual-nama" placeholder="Nama Lengkap" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                    </div>
+                    <div>
+                        <label for="manual-kelas" class="block text-sm font-medium text-slate-700">Kelas</label>
+                        <input type="text" id="manual-kelas" placeholder="Contoh: 9A" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700">Tambah ke Database</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="confirm-title" class="text-xl font-bold">Konfirmasi Aksi</h2>
+                <button id="close-confirm-modal-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <p id="confirm-message" class="text-sm text-slate-600 mb-6">Apakah Anda yakin?</p>
+            <div class="flex justify-end space-x-3">
+                <button id="confirm-cancel-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-slate-100 hover:bg-slate-200">Batal</button>
+                <button id="confirm-ok-btn" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Pengaturan</h2>
+                <button id="close-settings-modal-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold mb-2">Tema Tampilan</h3>
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="theme-setting" value="light" checked>
+                            <span>Cerah</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="radio" name="theme-setting" value="dark">
+                            <span>Gelap</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="reload-setting-container" class="hidden" data-role="admin">
+                    <h3 class="font-semibold mb-2">Pengaturan Reload Otomatis</h3>
+                    <p class="text-sm text-slate-600 mb-2">Atur interval waktu (dalam detik) untuk halaman publik.</p>
+                    <div class="relative">
+                        <input type="number" id="reload-interval-input" min="10" max="600" step="10" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5">
+                            <span class="text-slate-500">detik</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-form-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Masuk ke Dashboard</h2>
+                <button id="close-login-modal-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-username" class="block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" id="login-username" placeholder="Masukkan Email" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-slate-700">Password</label>
+                    <input type="password" id="login-password" placeholder="Password Anda" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                </div>
+                <button type="button" id="login-submit-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Masuk</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="employee-management-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Manajemen Pegawai</h2>
+                <button id="close-employee-management-modal-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            
+            <h3 class="text-lg font-semibold mb-3">Tambah Pegawai Baru</h3>
+            <form id="add-employee-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 border border-slate-200 rounded-lg">
+                <div>
+                    <label for="new-employee-email" class="block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" id="new-employee-email" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                </div>
+                <div>
+                    <label for="new-employee-password" class="block text-sm font-medium text-slate-700">Password</label>
+                    <input type="password" id="new-employee-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                </div>
+                <div>
+                    <label for="new-employee-name" class="block text-sm font-medium text-slate-700">Nama Lengkap</label>
+                    <input type="text" id="new-employee-name" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                </div>
+                <div>
+                    <label for="new-employee-role" class="block text-sm font-medium text-slate-700">Peran</label>
+                    <select id="new-employee-role" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                        <option value="staff">Staf (Guru/TU)</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="col-span-full text-right">
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Tambah Pegawai</button>
+                </div>
+            </form>
+
+            <h3 class="text-lg font-semibold mb-3">Daftar Pegawai</h3>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
+                <table class="w-full text-sm text-left text-slate-500">
+                    <thead class="text-xs uppercase bg-slate-100 text-slate-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Email</th>
+                            <th scope="col" class="px-6 py-3">Nama Lengkap</th>
+                            <th scope="col" class="px-6 py-3">Peran</th>
+                            <th scope="col" class="px-6 py-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employee-table-body">
+                        </tbody>
+                </table>
+                <div id="no-employees-message" class="p-4 text-center text-slate-400 hidden">Tidak ada pegawai di database.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Ganti Password</h2>
+                <button id="close-change-password-modal-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <form id="change-password-form" class="space-y-4">
+                <div>
+                    <label for="current-password" class="block text-sm font-medium text-slate-700">Password Saat Ini</label>
+                    <input type="password" id="current-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label for="new-password" class="block text-sm font-medium text-slate-700">Password Baru</label>
+                    <input type="password" id="new-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label for="confirm-new-password" class="block text-sm font-medium text-slate-700">Konfirmasi Password Baru</label>
+                    <input type="password" id="confirm-new-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Ganti Password</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

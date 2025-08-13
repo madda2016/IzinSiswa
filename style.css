@@ -1,0 +1,413 @@
+/* Styling yang sudah diimpor dari HTML asli */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.submenu.open {
+    max-height: 500px;
+}
+
+.menu-item.active {
+    background-color: #e0f2fe;
+    color: #0c4a6e;
+}
+
+.menu-item.active svg.arrow {
+    transform: rotate(90deg);
+}
+
+/* Animated Brand */
+.animated-brand {
+    background: linear-gradient(90deg, #38bdf8, #3b82f6, #8b5cf6, #ec4899);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-animation 5s ease infinite;
+}
+
+@keyframes gradient-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Base Light Theme */
+body {
+    background-color: #f0f4f8; /* Light Grey Background */
+    color: #334155; /* Dark text */
+    font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3, h4, .font-semibold {
+    font-family: 'Inter', sans-serif;
+}
+
+aside {
+    background-color: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+}
+
+main {
+    background-color: #f1f5f9;
+}
+
+.menu-item {
+    color: #334155;
+}
+.menu-item:hover {
+    background-color: #e2e8f0;
+}
+.menu-item.active {
+    background-color: #e0f2fe;
+}
+input, select, .bg-white {
+    background-color: #ffffff;
+    border-color: #cbd5e1;
+}
+.text-slate-800 { color: #1e293b; }
+.text-slate-900 { color: #0f172a; }
+.text-slate-700 { color: #334155; }
+.text-slate-600 { color: #475569; }
+.text-slate-500 { color: #64748b; }
+.text-slate-400 { color: #94a3b8; }
+.text-red-600 { color: #dc2626; }
+
+
+/* --- Light Mode Retro Style --- */
+.retro-text-shadow-light {
+    text-shadow: 2px 2px 0px #e2e8f0, 3px 3px 0px #60a5fa;
+    color: #1e3a8a;
+}
+.retro-text-glow-light {
+    text-shadow: 0 0 5px #60a5fa;
+    color: #60a5fa;
+}
+.retro-sidebar-light {
+    background-color: #e2e8f0;
+    border-right: 3px solid #60a5fa;
+    box-shadow: 4px 0 15px rgba(96, 165, 250, 0.2);
+}
+.retro-panel-light {
+    background-color: #f1f5f9;
+    border: 3px solid #60a5fa;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+    padding: 1.5rem;
+}
+.retro-panel-inner-light {
+    background-color: #e2e8f0;
+    border: 3px solid #60a5fa;
+    box-shadow: inset 0 0 5px rgba(96, 165, 250, 0.2);
+    padding: 1rem;
+}
+.retro-button-light {
+    text-transform: uppercase;
+    font-weight: bold;
+    border: 2px solid #60a5fa;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+    color: #1e3a8a;
+    background-color: #e2e8f0;
+}
+.retro-button-light:hover {
+    color: #f1f5f9;
+    background-color: #1e3a8a;
+    box-shadow: 0 0 15px rgba(30, 58, 138, 0.5);
+}
+.retro-button-icon-light {
+    transition: all 0.2s ease-in-out;
+}
+
+.retro-input-light {
+    border: 2px solid #60a5fa;
+    background-color: #e2e8f0;
+    color: #334155;
+    padding: 0.5rem;
+    font-family: 'Inter', sans-serif;
+    box-shadow: inset 0 0 5px rgba(96, 165, 250, 0.5);
+}
+.retro-input-light:focus {
+    outline: none;
+    box-shadow: 0 0 10px #60a5fa;
+}
+.retro-input-disabled-light {
+    border: 2px solid #94a3b8;
+    background-color: #cbd5e1;
+    color: #64748b;
+}
+.retro-table-header-light {
+    background-color: #e2e8f0;
+    border-bottom: 2px solid #60a5fa;
+}
+.retro-table-header-light th {
+    font-family: 'Inter', sans-serif;
+    color: #1e3a8a;
+    text-shadow: 1px 1px 0px #f1f5f9;
+}
+
+
+/* --- Dark Mode Retro Style --- */
+.dark body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0b1121;
+    color: #cbd5e1;
+}
+.dark h1, .dark h2, .dark .font-semibold {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Modifikasi agar teks menu tetap terang dalam mode gelap */
+.dark .menu-item, .dark .menu-item span, .dark .menu-item svg {
+    color: #e0f2fe !important;
+}
+
+.dark .menu-item:hover, .dark .menu-item.active {
+    background-color: #0c4a6e;
+}
+
+.dark .animated-brand {
+    background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-animation 5s ease infinite;
+}
+.dark .retro-text-shadow {
+    text-shadow: 2px 2px 0px #0b1121, 3px 3px 0px #ff00ff;
+    color: #00ffff;
+}
+.dark .retro-text-glow {
+    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+    color: #00ffff;
+}
+.dark aside {
+    background-color: #0f172a;
+    border-right: 3px solid #ff00ff;
+    box-shadow: 4px 0 15px rgba(255, 0, 255, 0.2);
+}
+.dark main {
+    background-color: #0b1121;
+}
+.dark .retro-panel {
+    background-color: #0f172a;
+    border: 3px solid #ff00ff;
+    box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+    padding: 1.5rem;
+}
+.dark .retro-panel-inner {
+    background-color: #0b1121;
+    border: 3px solid #ff00ff;
+    box-shadow: inset 0 0 5px rgba(255, 0, 255, 0.2);
+    padding: 1rem;
+}
+.dark .retro-button {
+    text-transform: uppercase;
+    font-weight: bold;
+    border: 2px solid #ff00ff;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+    color: #ff00ff;
+    background-color: #0f172a;
+}
+.dark .retro-button:hover {
+    color: #0f172a;
+    background-color: #ff00ff;
+    box-shadow: 0 0 15px #ff00ff;
+}
+.dark .retro-button-icon {
+    transition: all 0.2s ease-in-out;
+}
+.dark .retro-button-icon:hover {
+    color: #ff00ff;
+    text-shadow: 0 0 5px #ff00ff;
+}
+.dark .retro-input {
+    border: 2px solid #ff00ff;
+    background-color: #0f172a;
+    color: #00ffff;
+    padding: 0.5rem;
+    font-family: 'Inter', sans-serif;
+    box-shadow: inset 0 0 5px rgba(255, 0, 255, 0.5);
+}
+.dark .retro-input:focus {
+    outline: none;
+    box-shadow: 0 0 10px #ff00ff;
+}
+.dark .retro-input-disabled {
+    border: 2px solid #4a5568;
+    background-color: #1f2937;
+    color: #a0aec0;
+}
+.dark .retro-table-header {
+    background-color: #1a2233;
+    border-bottom: 2px solid #ff00ff;
+}
+.dark .retro-table-header th {
+    font-family: 'Inter', sans-serif;
+    color: #00ffff;
+    text-shadow: 1px 1px 0px #0b1121;
+}
+
+/* --- Modal Border Animation --- */
+@keyframes modal-border-glow-dark {
+    0% { box-shadow: 0 0 5px rgba(255, 0, 255, 0.3), 0 0 10px rgba(255, 0, 255, 0.15); }
+    50% { box-shadow: 0 0 10px rgba(255, 0, 255, 0.6), 0 0 20px rgba(255, 0, 255, 0.3); }
+    100% { box-shadow: 0 0 5px rgba(255, 0, 255, 0.3), 0 0 10px rgba(255, 0, 255, 0.15); }
+}
+
+@keyframes modal-border-glow-light {
+    0% { box-shadow: 0 0 5px rgba(96, 165, 250, 0.3), 0 0 10px rgba(96, 165, 250, 0.15); }
+    50% { box-shadow: 0 0 10px rgba(96, 165, 250, 0.6), 0 0 20px rgba(96, 165, 250, 0.3); }
+    100% { box-shadow: 0 0 5px rgba(96, 165, 250, 0.3), 0 0 10px rgba(96, 165, 250, 0.15); }
+}
+
+.dark .retro-modal-panel {
+    animation: modal-border-glow-dark 3s infinite ease-in-out;
+}
+
+.retro-modal-panel-light {
+    animation: modal-border-glow-light 3s infinite ease-in-out;
+}
+
+/* --- Tampilan Publik: Nuansa Retro Elegan --- */
+#public-view {
+    background-color: #0a0b12; /* Latar belakang sangat gelap */
+    animation: none; /* Nonaktifkan animasi backgroundShift */
+    font-family: 'Inter', sans-serif;
+}
+
+#public-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3) 50%, transparent 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    animation: scanlines 5s linear infinite;
+    opacity: 0.2;
+}
+
+@keyframes scanlines {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100%; }
+}
+
+.public-content {
+    background-color: rgba(10, 11, 18, 0.8);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 255, 255, 0.2);
+    border: 1px solid #00ffff; /* Border neon cyan */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    height: 90%;
+    max-height: 600px;
+    width: 90%;
+    max-width: 800px;
+    animation: modal-border-glow-public 3s infinite ease-in-out;
+}
+
+@keyframes modal-border-glow-public {
+    0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3), 0 0 10px rgba(0, 255, 255, 0.15); }
+    50% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.6), 0 0 20px rgba(0, 255, 255, 0.3); }
+    100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3), 0 0 10px rgba(0, 255, 255, 0.15); }
+}
+
+.public-main-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #00ffff; /* Neon cyan */
+    text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0, 255, 255, 0.4);
+    background-color: transparent;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.public-queue-table-container {
+    width: 100%;
+    flex-grow: 1;
+    overflow-y: hidden; /* Mengaktifkan kembali fungsi scroll */
+    border: 1px solid #00ffff;
+    margin-top: 1rem;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    position: relative;
+    pointer-events: none;
+    background-color: rgba(0, 255, 255, 0.05);
+}
+
+.public-queue-table-header {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: rgba(10, 11, 18, 0.9);
+}
+
+.public-queue-table-header th {
+    padding: 1.2rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    color: #00ffff;
+    font-weight: 700;
+    font-size: 1.6rem;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+.public-queue-table-header th:first-child { width: 10%; border-left: none; }
+.public-queue-table-header th:nth-child(2) { width: 60%; }
+.public-queue-table-header th:last-child { width: 30%; }
+
+.public-queue-table-body-wrapper {
+    height: calc(100% - 60px);
+    overflow-y: hidden;
+    position: relative;
+}
+
+.public-queue-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.public-queue-table td {
+    padding: 1.2rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: clip;
+    color: #e0f2fe;
+    font-size: 1.5rem;
+}
