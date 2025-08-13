@@ -383,6 +383,35 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    
+<!-- Firebase SDK v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+  // Ganti dengan konfigurasi dari Firebase Console -> Project Settings -> SDK setup & config
+  const firebaseConfig = {
+  apiKey: "AIzaSyAfNPCkWJVKzQOoFWOLfUf8-XNohLOC-WI",
+  authDomain: "izinkumas.firebaseapp.com",
+  projectId: "izinkumas",
+  storageBucket: "izinkumas.firebasestorage.app",
+  messagingSenderId: "88478446339",
+  appId: "1:88478446339:web:d36670a62b855fa15aef36"
+};
+
+  // Inisialisasi Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Attach ke window supaya script.js yang lama tetap jalan
+  window.db = firebase.firestore();
+  window.auth = firebase.auth();
+  window.signInWithEmailAndPassword = (auth, email, pass) =>
+    firebase.auth().signInWithEmailAndPassword(email, pass);
+  window.onAuthStateChanged = (auth, cb) =>
+    firebase.auth().onAuthStateChanged(cb);
+</script>
+
+<script src="script.js"></script>
 </body>
 </html>
