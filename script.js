@@ -1,9 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- FIREBASE INITIALIZATION & UTILITIES ---
+    // Mengakses instance Firebase dari objek window yang diekspos di index.html
     const db = window.db; // Firestore instance
     const auth = window.auth; // Auth instance
     const appId = window.appId; // App ID from environment
-    const initialAuthToken = window.initialAuthToken; // Initial auth token from environment
+
+    // Akses langsung fungsi-fungsi Firebase yang diekspos ke window
+    const { 
+        onAuthStateChanged, signInAnonymously, signInWithCustomToken, signOut, 
+        createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword,
+        doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, arrayUnion, arrayRemove
+    } = window;
 
     // Firestore Collection References (dynamic based on appId and userId)
     const getStudentsColRef = (uid) => collection(db, `artifacts/${appId}/users/${uid}/students`);
@@ -245,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.className = 'bg-white border-b hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700';
             const isSelected = selectedPrintSlips.includes(index);
             // Hanya admin atau penambah entri yang bisa menghapus
-            const canDelete = (loggedInEmployee && loggedInEmployee.role === 'admin') || (loggedInEmployee && student.addedByUid === loggedInEmployee.uid);
+            const canDelete = (loggedInEmployee && loggedInEmployee.role === 'admin') || (loggedInEmployee && student.addedByUid === loggedInEmployee.id);
             
             // Logika untuk menonaktifkan tombol "Hapus" jika antrian sudah dikonfirmasi
             const deleteDisabled = isTodayQueueConfirmed ? 'disabled' : '';
@@ -466,13 +473,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = dom.loginPasswordInput.value.trim();
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            // Menggunakan fungsi signInWithEmailAndPassword yang diakses dari window
+            const userCredential = await window.signInWithEmailAndPassword(auth, email, password);
             await setAuthState(userCredential.user);
             showMessage('Login Berhasil', `Selamat datang, ${loggedInEmployee.name || userCredential.user.email}!`);
         } catch (error) {
             console.error("Login failed:", error);
             let errorMessage = 'Email atau password salah. Silakan coba lagi.';
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 errorMessage = 'Email atau password salah. Silakan coba lagi.';
             } else if (error.code === 'auth/invalid-email') {
                 errorMessage = 'Format email tidak valid.';
@@ -485,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
+            await window.signOut(auth);
             await setAuthState(null); // Explicitly set state to null after signOut
             showMessage('Berhasil Keluar', 'Anda telah berhasil keluar dari aplikasi.');
         } catch (error) {
@@ -569,10 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (newStudentsToInsert.length > 0) {
                     // Batch writes for efficiency
-                    const batch = db.batch; // Access the batch function
+                    const batch = db.batch(); // Access the batch function
                     for (const student of newStudentsToInsert) {
                         const newDocRef = doc(getStudentsColRef(userId)); // Auto-generate new doc ID
-                        await setDoc(newDocRef, student);
+                        batch.set(newDocRef, student);
                     }
                     await batch.commit(); // Commit the batch
                     let msg = `Berhasil mengimpor ${newStudentsToInsert.length} siswa baru.`;
@@ -749,8 +757,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            // Menggunakan fungsi createUserWithEmailAndPassword yang diakses dari window
+            const userCredential = await window.createUserWithEmailAndPassword(auth, email, password);
             const newUid = userCredential.user.uid;
 
             // Store employee details in Firestore
@@ -818,9 +826,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageText = 'Tidak ada pengguna yang login.';
             } else {
                 try {
-                    // Re-authenticate user if necessary (not directly exposed here, but good practice for password changes)
-                    // For simplicity, directly attempt updatePassword, which might fail if user's session is old
-                    await updatePassword(user, newPasswordInput.value);
+                    // Menggunakan fungsi updatePassword yang diakses dari window
+                    await window.updatePassword(user, newPasswordInput.value);
                     messageTitle = 'Berhasil';
                     messageText = 'Password berhasil diganti!';
                 } catch (error) {
@@ -1387,7 +1394,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // This happens if a user logs in via Firebase Auth but has no entry in Firestore 'employees' collection
                     // Create a default admin user if no users exist at all in Firestore
-                    const allEmployeesSnapshot = await getDocs(getEmployeesColRef(user.uid));
+                    const allEmployeesQuery = query(collection(db, `artifacts/${appId}/users/${user.uid}/employees`));
+                    const allEmployeesSnapshot = await getDocs(allEmployeesQuery);
+                    
                     if (allEmployeesSnapshot.empty && user.email === 'admin@app.com') {
                         await setDoc(employeeDocRef, { email: 'admin@app.com', name: 'Admin Sekolah', role: 'admin' });
                         await setAuthState({ id: user.uid, email: 'admin@app.com', name: 'Admin Sekolah', role: 'admin' });
@@ -1396,19 +1405,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         await setAuthState({ id: user.uid, email: user.email || 'anonymous', name: 'Pengguna Anonim', role: 'staff' });
                     } else {
                         // For any other authenticated user without employee details, assume staff role
-                        await setDoc(employeeDocRef, { email: user.email, name: user.email.split('@')[0], role: 'staff' });
-                        await setAuthState({ id: user.uid, email: user.email, name: user.email.split('@')[0], role: 'staff' });
+                        await setDoc(employeeDocRef, { email: user.email, name: user.email ? user.email.split('@')[0] : 'Pengguna Baru', role: 'staff' });
+                        await setAuthState({ id: user.uid, email: user.email, name: user.email ? user.email.split('@')[0] : 'Pengguna Baru', role: 'staff' });
                     }
                 }
             } else {
                 // No user is signed in. Attempt anonymous sign-in first.
                 try {
                     // Try to sign in with the Canvas provided token if available.
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
+                    if (window.initialAuthToken) { // Menggunakan window.initialAuthToken
+                        await window.signInWithCustomToken(auth, window.initialAuthToken); // Menggunakan window.signInWithCustomToken
                         // onAuthStateChanged will be triggered again with the custom token user
                     } else {
-                        await signInAnonymously(auth);
+                        await window.signInAnonymously(auth); // Menggunakan window.signInAnonymously
                         // onAuthStateChanged will be triggered again with the anonymous user
                     }
                 } catch (anonError) {
