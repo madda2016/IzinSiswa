@@ -5,19 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = window.auth; // Auth instance
     const appId = window.appId; // App ID from environment
 
-    // Akses langsung fungsi-fungsi Firebase yang diekspos ke window
-    const { 
-        onAuthStateChanged, signInAnonymously, signInWithCustomToken, signOut, 
-        createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword,
-        doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, arrayUnion, arrayRemove
-    } = window;
+    // TIDAK LAGI MENGGUNAKAN DESTRUCTURING DI SINI.
+    // Fungsi-fungsi Firebase akan diakses langsung melalui objek 'window'.
+    // Contoh: window.signInWithEmailAndPassword, window.doc, dll.
 
     // Firestore Collection References (dynamic based on appId and userId)
-    const getStudentsColRef = (uid) => collection(db, `artifacts/${appId}/users/${uid}/students`);
-    const getDailyQueueColRef = (uid) => collection(db, `artifacts/${appId}/users/${uid}/daily_queue`);
-    const getDailyQueueHistoryColRef = (uid) => collection(db, `artifacts/${appId}/users/${uid}/daily_queue_history`);
-    const getEmployeesColRef = (uid) => collection(db, `artifacts/${appId}/users/${uid}/employees`); // User-specific employee data
-    const getPublicQueueColRef = () => collection(db, `artifacts/${appId}/public/data/daily_queue`); // Public queue data
+    const getStudentsColRef = (uid) => window.collection(db, `artifacts/${appId}/users/${uid}/students`);
+    const getDailyQueueColRef = (uid) => window.collection(db, `artifacts/${appId}/users/${uid}/daily_queue`);
+    const getDailyQueueHistoryColRef = (uid) => window.collection(db, `artifacts/${appId}/users/${uid}/daily_queue_history`);
+    const getEmployeesColRef = (uid) => window.collection(db, `artifacts/${appId}/users/${uid}/employees`); // User-specific employee data
+    const getPublicQueueColRef = () => window.collection(db, `artifacts/${appId}/public/data/daily_queue`); // Public queue data
 
     const showMessage = (title, message) => showCustomModal('message', title, message);
     const showConfirmation = (title, message, onConfirm) => showCustomModal('confirm', title, message, onConfirm);
@@ -153,13 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (unsubscribeEmployees) unsubscribeEmployees();
 
         // Listen for user's students data
-        unsubscribeStudents = onSnapshot(getStudentsColRef(uid), (snapshot) => {
+        unsubscribeStudents = window.onSnapshot(getStudentsColRef(uid), (snapshot) => {
             studentDatabase = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             syncDataAndRender();
         }, (error) => console.error("Error fetching students: ", error));
 
         // Listen for user's daily queue data
-        unsubscribeDailyQueue = onSnapshot(getDailyQueueColRef(uid), (snapshot) => {
+        unsubscribeDailyQueue = window.onSnapshot(getDailyQueueColRef(uid), (snapshot) => {
             printQueue = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                     .filter(doc => {
                                         const docDate = new Date(doc.created_at);
@@ -177,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, (error) => console.error("Error fetching daily queue: ", error));
 
         // Listen for user's daily queue history data
-        unsubscribeDailyQueueHistory = onSnapshot(getDailyQueueHistoryColRef(uid), (snapshot) => {
+        unsubscribeDailyQueueHistory = window.onSnapshot(getDailyQueueHistoryColRef(uid), (snapshot) => {
             dailyQueueHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             // Re-evaluate isTodayQueueConfirmed after history updates
             const today = new Date().toLocaleDateString('en-CA');
@@ -186,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, (error) => console.error("Error fetching daily queue history: ", error));
 
         // Listen for employee data
-        unsubscribeEmployees = onSnapshot(getEmployeesColRef(uid), (snapshot) => {
+        unsubscribeEmployees = window.onSnapshot(getEmployeesColRef(uid), (snapshot) => {
             employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             syncDataAndRender();
         }, (error) => console.error("Error fetching employees: ", error));
@@ -194,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setupPublicQueueListener = () => {
         if (unsubscribePublicQueue) unsubscribePublicQueue();
-        unsubscribePublicQueue = onSnapshot(getPublicQueueColRef(), (snapshot) => {
+        unsubscribePublicQueue = window.onSnapshot(getPublicQueueColRef(), (snapshot) => {
             // Update the public queue displayed on the public view
             printQueue = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                                     .filter(doc => {
@@ -404,8 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             userId = user.uid; // Set the global userId
             // Fetch user-specific employee data from Firestore
-            const employeeDocRef = doc(getEmployeesColRef(userId), userId);
-            const employeeDocSnap = await getDoc(employeeDocRef);
+            const employeeDocRef = window.doc(getEmployeesColRef(userId), userId);
+            const employeeDocSnap = await window.getDoc(employeeDocRef);
 
             if (employeeDocSnap.exists()) {
                 loggedInEmployee = { id: employeeDocSnap.id, ...employeeDocSnap.data() };
@@ -415,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn("No employee data found for authenticated user. Assuming staff role.");
                 loggedInEmployee = { id: userId, email: user.email || 'anon@app.com', name: user.email || 'Pengguna Anonim', role: 'staff' };
                 // Optionally, save this basic employee info to Firestore
-                await setDoc(employeeDocRef, loggedInEmployee, { merge: true });
+                await window.setDoc(employeeDocRef, loggedInEmployee, { merge: true });
             }
 
             dom.publicView.classList.add('hidden');
@@ -522,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Add student to current user's students collection
-            await addDoc(getStudentsColRef(userId), {
+            await window.addDoc(getStudentsColRef(userId), {
                 name: newName,
                 class: newClass,
                 wali: '',
@@ -579,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Batch writes for efficiency
                     const batch = db.batch(); // Access the batch function
                     for (const student of newStudentsToInsert) {
-                        const newDocRef = doc(getStudentsColRef(userId)); // Auto-generate new doc ID
+                        const newDocRef = window.doc(getStudentsColRef(userId)); // Auto-generate new doc ID
                         batch.set(newDocRef, student);
                     }
                     await batch.commit(); // Commit the batch
@@ -655,9 +652,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Add to user's daily queue
-            await addDoc(getDailyQueueColRef(userId), newQueueEntry);
+            await window.addDoc(getDailyQueueColRef(userId), newQueueEntry);
             // Add to public daily queue
-            await addDoc(getPublicQueueColRef(), newQueueEntry);
+            await window.addDoc(getPublicQueueColRef(), newQueueEntry);
 
             showMessage('Berhasil', `Siswa "${selectedStudent.name}" ditambahkan ke antrian.`);
             selectedStudent = null;
@@ -690,17 +687,17 @@ document.addEventListener('DOMContentLoaded', () => {
             showConfirmation('Hapus Entri Antrian?', `Yakin ingin menghapus entri untuk ${studentToRemove.name}?`, async () => {
                 try {
                     // Remove from user's daily queue
-                    await deleteDoc(doc(getDailyQueueColRef(userId), studentIdToRemove));
+                    await window.deleteDoc(window.doc(getDailyQueueColRef(userId), studentIdToRemove));
                     
                     // Remove from public daily queue
-                    const publicQueueQuery = query(getPublicQueueColRef(), 
-                        where("name", "==", studentToRemove.name),
-                        where("class", "==", studentToRemove.class),
-                        where("created_at", "==", studentToRemove.created_at)
+                    const publicQueueQuery = window.query(getPublicQueueColRef(), 
+                        window.where("name", "==", studentToRemove.name),
+                        window.where("class", "==", studentToRemove.class),
+                        window.where("created_at", "==", studentToRemove.created_at)
                     );
-                    const publicDocs = await getDocs(publicQueueQuery);
+                    const publicDocs = await window.getDocs(publicQueueQuery);
                     publicDocs.forEach(async (d) => {
-                        await deleteDoc(doc(getPublicQueueColRef(), d.id));
+                        await window.deleteDoc(window.doc(getPublicQueueColRef(), d.id));
                     });
 
                     showMessage('Entri Dihapus', `Entri untuk ${studentToRemove.name} telah dihapus.`);
@@ -762,7 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newUid = userCredential.user.uid;
 
             // Store employee details in Firestore
-            await setDoc(doc(getEmployeesColRef(userId), newUid), {
+            await window.setDoc(window.doc(getEmployeesColRef(userId), newUid), {
                 email,
                 name,
                 role,
@@ -800,7 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showConfirmation('Hapus Pegawai?', `Yakin ingin menghapus pegawai "${employeeToDelete.name}"?`, async () => {
                 try {
                     // Remove employee details from Firestore
-                    await deleteDoc(doc(getEmployeesColRef(userId), employeeUidToDelete));
+                    await window.deleteDoc(window.doc(getEmployeesColRef(userId), employeeUidToDelete));
                     showMessage('Berhasil', 'Pegawai berhasil dihapus.');
                 } catch (error) {
                     console.error("Error deleting employee:", error);
@@ -951,7 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (studentsToArchive.length > 0) {
             try {
                 // Add new history entry for the current user
-                await addDoc(getDailyQueueHistoryColRef(userId), {
+                await window.addDoc(getDailyQueueHistoryColRef(userId), {
                     date: today,
                     queue: studentsToArchive,
                     userId: userId // Store userId with history entry
@@ -1123,16 +1120,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!userId) { showMessage('Error', 'Pengguna tidak terautentikasi.'); return; }
             try {
                 // Fetch all data for export
-                const studentsSnapshot = await getDocs(getStudentsColRef(userId));
+                const studentsSnapshot = await window.getDocs(getStudentsColRef(userId));
                 const studentsData = studentsSnapshot.docs.map(doc => doc.data());
 
-                const dailyQueueSnapshot = await getDocs(getDailyQueueColRef(userId));
+                const dailyQueueSnapshot = await window.getDocs(getDailyQueueColRef(userId));
                 const dailyQueueData = dailyQueueSnapshot.docs.map(doc => doc.data());
 
-                const historySnapshot = await getDocs(getDailyQueueHistoryColRef(userId));
+                const historySnapshot = await window.getDocs(getDailyQueueHistoryColRef(userId));
                 const historyData = historySnapshot.docs.map(doc => doc.data());
                 
-                const employeesSnapshot = await getDocs(getEmployeesColRef(userId));
+                const employeesSnapshot = await window.getDocs(getEmployeesColRef(userId));
                 const employeesData = employeesSnapshot.docs.map(doc => doc.data());
 
                 const appData = {
@@ -1175,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ];
 
                                 for (const colRef of collectionsToClear) {
-                                    const docsSnapshot = await getDocs(colRef);
+                                    const docsSnapshot = await window.getDocs(colRef);
                                     const batch = db.batch();
                                     docsSnapshot.docs.forEach(doc => {
                                         batch.delete(doc.ref);
@@ -1187,22 +1184,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const importBatch = db.batch();
                                 // Import users (employees)
                                 for (const user of importedData.users) {
-                                    const userDocRef = doc(getEmployeesColRef(userId), user.id || user.uid || crypto.randomUUID()); // Ensure doc ID for employees
+                                    const userDocRef = window.doc(getEmployeesColRef(userId), user.id || user.uid || crypto.randomUUID()); // Ensure doc ID for employees
                                     importBatch.set(userDocRef, user);
                                 }
                                 // Import students
                                 for (const student of importedData.students) {
-                                    const studentDocRef = doc(getStudentsColRef(userId), student.id || crypto.randomUUID());
+                                    const studentDocRef = window.doc(getStudentsColRef(userId), student.id || crypto.randomUUID());
                                     importBatch.set(studentDocRef, student);
                                 }
                                 // Import daily queue
                                 for (const item of importedData.daily_queue) {
-                                    const queueDocRef = doc(getDailyQueueColRef(userId), item.id || crypto.randomUUID());
+                                    const queueDocRef = window.doc(getDailyQueueColRef(userId), item.id || crypto.randomUUID());
                                     importBatch.set(queueDocRef, item);
                                 }
                                 // Import daily queue history
                                 for (const history of importedData.daily_queue_history) {
-                                    const historyDocRef = doc(getDailyQueueHistoryColRef(userId), history.id || crypto.randomUUID());
+                                    const historyDocRef = window.doc(getDailyQueueHistoryColRef(userId), history.id || crypto.randomUUID());
                                     importBatch.set(historyDocRef, history);
                                 }
                                 await importBatch.commit();
@@ -1235,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ];
                     
                     for (const colRef of collectionsToDelete) {
-                        const docsSnapshot = await getDocs(colRef);
+                        const docsSnapshot = await window.getDocs(colRef);
                         const batch = db.batch();
                         docsSnapshot.docs.forEach(doc => {
                             batch.delete(doc.ref);
@@ -1279,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Archive only if not already archived for today
                         const isAlreadyArchived = dailyQueueHistory.some(entry => entry.date === today && entry.userId === userId);
                         if (!isAlreadyArchived) {
-                            await addDoc(getDailyQueueHistoryColRef(userId), {
+                            await window.addDoc(getDailyQueueHistoryColRef(userId), {
                                 date: today,
                                 queue: printQueue,
                                 userId: userId
@@ -1287,7 +1284,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     // Clear user's daily queue
-                    const qDocs = await getDocs(getDailyQueueColRef(userId));
+                    const qDocs = await window.getDocs(getDailyQueueColRef(userId));
                     const batch = db.batch();
                     qDocs.docs.forEach(d => batch.delete(d.ref));
                     await batch.commit();
@@ -1295,9 +1292,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Clear public daily queue (only for current day's entries that were added by this user perhaps? 
                     // Or simply clear all public queue entries assuming this action clears today's public queue globally)
                     // For simplicity, we'll clear all public queue entries for today, assuming a reset means a full reset.
-                    const publicQDocs = await getDocs(query(getPublicQueueColRef(), 
-                        where("created_at", ">=", new Date(new Date().setHours(0,0,0,0)).toISOString()),
-                        where("created_at", "<", new Date(new Date().setHours(23,59,59,999)).toISOString())
+                    const publicQDocs = await window.getDocs(window.query(getPublicQueueColRef(), 
+                        window.where("created_at", ">=", new Date(new Date().setHours(0,0,0,0)).toISOString()),
+                        window.where("created_at", "<", new Date(new Date().setHours(23,59,59,999)).toISOString())
                     ));
                     const publicBatch = db.batch();
                     publicQDocs.docs.forEach(d => publicBatch.delete(d.ref));
@@ -1386,26 +1383,26 @@ document.addEventListener('DOMContentLoaded', () => {
         window.onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // User is signed in. Fetch detailed employee data from Firestore.
-                const employeeDocRef = doc(getEmployeesColRef(user.uid), user.uid);
-                const employeeDocSnap = await getDoc(employeeDocRef);
+                const employeeDocRef = window.doc(getEmployeesColRef(user.uid), user.uid);
+                const employeeDocSnap = await window.getDoc(employeeDocRef);
 
                 if (employeeDocSnap.exists()) {
                     await setAuthState({ id: employeeDocSnap.id, ...employeeDocSnap.data() });
                 } else {
                     // This happens if a user logs in via Firebase Auth but has no entry in Firestore 'employees' collection
                     // Create a default admin user if no users exist at all in Firestore
-                    const allEmployeesQuery = query(collection(db, `artifacts/${appId}/users/${user.uid}/employees`));
-                    const allEmployeesSnapshot = await getDocs(allEmployeesQuery);
+                    const allEmployeesQuery = window.query(window.collection(db, `artifacts/${appId}/users/${user.uid}/employees`));
+                    const allEmployeesSnapshot = await window.getDocs(allEmployeesQuery);
                     
                     if (allEmployeesSnapshot.empty && user.email === 'admin@app.com') {
-                        await setDoc(employeeDocRef, { email: 'admin@app.com', name: 'Admin Sekolah', role: 'admin' });
+                        await window.setDoc(employeeDocRef, { email: 'admin@app.com', name: 'Admin Sekolah', role: 'admin' });
                         await setAuthState({ id: user.uid, email: 'admin@app.com', name: 'Admin Sekolah', role: 'admin' });
                     } else if (user.isAnonymous) {
                          // If it's an anonymous user from Canvas, use a basic profile
                         await setAuthState({ id: user.uid, email: user.email || 'anonymous', name: 'Pengguna Anonim', role: 'staff' });
                     } else {
                         // For any other authenticated user without employee details, assume staff role
-                        await setDoc(employeeDocRef, { email: user.email, name: user.email ? user.email.split('@')[0] : 'Pengguna Baru', role: 'staff' });
+                        await window.setDoc(employeeDocRef, { email: user.email, name: user.email ? user.email.split('@')[0] : 'Pengguna Baru', role: 'staff' });
                         await setAuthState({ id: user.uid, email: user.email, name: user.email ? user.email.split('@')[0] : 'Pengguna Baru', role: 'staff' });
                     }
                 }
