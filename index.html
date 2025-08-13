@@ -403,13 +403,41 @@
   // Inisialisasi Firebase
   firebase.initializeApp(firebaseConfig);
 
-  // Attach ke window supaya script.js yang lama tetap jalan
+  // Firestore & Auth
   window.db = firebase.firestore();
   window.auth = firebase.auth();
+
+  // Auth methods
   window.signInWithEmailAndPassword = (auth, email, pass) =>
     firebase.auth().signInWithEmailAndPassword(email, pass);
   window.onAuthStateChanged = (auth, cb) =>
     firebase.auth().onAuthStateChanged(cb);
+  window.signInAnonymously = (auth) =>
+    firebase.auth().signInAnonymously();
+  window.signOut = () =>
+    firebase.auth().signOut();
+
+  // Firestore methods
+  window.collection = (...args) =>
+    firebase.firestore().collection(...args);
+  window.doc = (...args) =>
+    firebase.firestore().doc(...args);
+  window.addDoc = (ref, data) =>
+    ref.add(data);
+  window.getDoc = (ref) =>
+    ref.get();
+  window.setDoc = (ref, data) =>
+    ref.set(data);
+  window.deleteDoc = (ref) =>
+    ref.delete();
+  window.onSnapshot = (ref, cb) =>
+    ref.onSnapshot(cb);
+  window.getDocs = (ref) =>
+    ref.get();
+  window.query = (...args) =>
+    firebase.firestore().collection(...args[0]).where(...args.slice(1));
+  window.where = (...args) =>
+    firebase.firestore().where(...args);
 </script>
 
 <script src="script.js"></script>
